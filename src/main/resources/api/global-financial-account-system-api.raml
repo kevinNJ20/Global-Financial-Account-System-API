@@ -1,0 +1,202 @@
+#%RAML 1.0
+title: Global Financial Account System API
+version: 1.0.0
+baseUri: http://localhost:8081/api/global/accounts
+mediaType: application/json
+
+documentation:
+  - title: Overview
+    content: API système pour gérer les comptes financiers dans Global Data (copie dorée)
+
+types:
+  FinancialAccount:
+    type: object
+    properties:
+      id?: string
+      globalId?: string
+      accountNumber: string
+      accountType: string
+      accountName?: string
+      currency?: string
+      balance?: number
+      availableBalance?: number
+      owners:
+        type: array
+        items:
+          type: object
+          properties:
+            customerGlobalId: string
+            relationshipType: string
+      status?: string
+  FinancialTransaction:
+    type: object
+    properties:
+      id?: string
+      globalId?: string
+      transactionNumber: string
+      accountGlobalId: string
+      transactionType: string
+      amount: number
+      currency?: string
+      transactionDate: datetime
+      description?: string
+      status?: string
+  FinancialCard:
+    type: object
+    properties:
+      id?: string
+      globalId?: string
+      cardNumber: string
+      cardType: string
+      customerGlobalId: string
+      accountGlobalId?: string
+      status?: string
+  ErrorResponse:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code: string
+          message: string
+
+traits:
+  hasQueryParam:
+    queryParameters:
+      limit:
+        type: integer
+        required: false
+        default: 100
+      offset:
+        type: integer
+        required: false
+        default: 0
+
+/accounts:
+  displayName: Global Financial Accounts
+  description: Opérations sur les comptes financiers dans Global Data
+  
+  get:
+    displayName: Get Accounts
+    is: [hasQueryParam]
+    queryParameters:
+      globalId:
+        type: string
+        required: false
+      customerGlobalId:
+        type: string
+        required: false
+      accountNumber:
+        type: string
+        required: false
+      accountType:
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            type: FinancialAccount[]
+      400:
+        body:
+          application/json:
+            type: ErrorResponse
+
+  post:
+    displayName: Upsert Account
+    body:
+      application/json:
+        type: FinancialAccount
+    responses:
+      200:
+        body:
+          application/json:
+            type: FinancialAccount
+      201:
+        body:
+          application/json:
+            type: FinancialAccount
+
+  /{accountGlobalId}:
+    displayName: Account by Global ID
+    uriParameters:
+      accountGlobalId:
+        type: string
+    get:
+      displayName: Get Account by Global ID
+      responses:
+        200:
+          body:
+            application/json:
+              type: FinancialAccount
+        404:
+          body:
+            application/json:
+              type: ErrorResponse
+
+  /transactions:
+    displayName: Transactions
+    get:
+      displayName: Get Transactions
+      is: [hasQueryParam]
+      queryParameters:
+        accountGlobalId:
+          type: string
+          required: false
+        startDate:
+          type: date-only
+          required: false
+        endDate:
+          type: date-only
+          required: false
+      responses:
+        200:
+          body:
+            application/json:
+              type: FinancialTransaction[]
+    post:
+      displayName: Upsert Transaction
+      body:
+        application/json:
+          type: FinancialTransaction
+      responses:
+        200:
+          body:
+            application/json:
+              type: FinancialTransaction
+        201:
+          body:
+            application/json:
+              type: FinancialTransaction
+
+  /cards:
+    displayName: Cards
+    get:
+      displayName: Get Cards
+      is: [hasQueryParam]
+      queryParameters:
+        customerGlobalId:
+          type: string
+          required: false
+        accountGlobalId:
+          type: string
+          required: false
+      responses:
+        200:
+          body:
+            application/json:
+              type: FinancialCard[]
+    post:
+      displayName: Upsert Card
+      body:
+        application/json:
+          type: FinancialCard
+      responses:
+        200:
+          body:
+            application/json:
+              type: FinancialCard
+        201:
+          body:
+            application/json:
+              type: FinancialCard

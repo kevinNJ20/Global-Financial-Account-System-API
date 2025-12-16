@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+      http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+      http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+      http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+  <!-- APIkit Router Configuration -->
+  <apikit:config name="global-financial-account-system-api-config" 
+                  raml="global-financial-account-system-api.raml" 
+                  outboundHeadersMapName="outboundHeaders" 
+                  httpStatusVarName="httpStatus"/>
+
+  <!-- Main HTTP Listener with APIkit Router -->
+  <flow name="main">
+    <http:listener config-ref="HTTP_Listener_config" path="/api/*" doc:name="HTTP Listener"/>
+    <apikit:router config-ref="global-financial-account-system-api-config" doc:name="APIkit Router"/>
+    <error-handler>
+      <on-error-propagate type="APIKIT:NOT_FOUND" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+        <ee:transform doc:name="Transform Error Response">
+          <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    code: "NOT_FOUND",
+    message: "Resource not found",
+    timestamp: now()
+  }
+}]]></ee:set-payload>
+          </ee:message>
+        </ee:transform>
+        <http:response statusCode="404" doc:name="HTTP Response"/>
+      </on-error-propagate>
+      <on-error-propagate type="APIKIT:BAD_REQUEST" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+        <ee:transform doc:name="Transform Error Response">
+          <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    code: "BAD_REQUEST",
+    message: error.description default "Bad request",
+    timestamp: now()
+  }
+}]]></ee:set-payload>
+          </ee:message>
+        </ee:transform>
+        <http:response statusCode="400" doc:name="HTTP Response"/>
+      </on-error-propagate>
+      <on-error-propagate type="APIKIT:NOT_ACCEPTABLE" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+        <ee:transform doc:name="Transform Error Response">
+          <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    code: "NOT_ACCEPTABLE",
+    message: "Content type not acceptable",
+    timestamp: now()
+  }
+}]]></ee:set-payload>
+          </ee:message>
+        </ee:transform>
+        <http:response statusCode="406" doc:name="HTTP Response"/>
+      </on-error-propagate>
+      <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+        <ee:transform doc:name="Transform Error Response">
+          <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    code: "UNSUPPORTED_MEDIA_TYPE",
+    message: "Unsupported media type",
+    timestamp: now()
+  }
+}]]></ee:set-payload>
+          </ee:message>
+        </ee:transform>
+        <http:response statusCode="415" doc:name="HTTP Response"/>
+      </on-error-propagate>
+      <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+        <ee:transform doc:name="Transform Error Response">
+          <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    code: "METHOD_NOT_ALLOWED",
+    message: "Method not allowed",
+    timestamp: now()
+  }
+}]]></ee:set-payload>
+          </ee:message>
+        </ee:transform>
+        <http:response statusCode="405" doc:name="HTTP Response"/>
+      </on-error-propagate>
+    </error-handler>
+  </flow>
+
+  <!-- GET /accounts -->
+  <flow name="get:\accounts:global-financial-account-system-api-config">
+    <ee:transform doc:name="Build Query Parameters">
+      <ee:message>
+        <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+  globalId: attributes.queryParams.globalId default null,
+  customerGlobalId: attributes.queryParams.customerGlobalId default null,
+  accountNumber: attributes.queryParams.accountNumber default null,
+  accountType: attributes.queryParams.accountType default null,
+  limit: (attributes.queryParams.limit as Number default 100) as String,
+  offset: (attributes.queryParams.offset as Number default 0) as String
+}]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+    <flow-ref name="get-accounts-business-logic" doc:name="get-accounts-business-logic"/>
+  </flow>
+
+  <!-- POST /accounts -->
+  <flow name="post:\accounts:global-financial-account-system-api-config">
+    <flow-ref name="upsert-account-business-logic" doc:name="upsert-account-business-logic"/>
+  </flow>
+
+  <!-- GET /accounts/{accountGlobalId} -->
+  <flow name="get:\accounts\{accountGlobalId}:global-financial-account-system-api-config">
+    <set-variable value="#[attributes.uriParams.accountGlobalId]" variableName="accountGlobalId" doc:name="Set Account Global ID"/>
+    <flow-ref name="get-account-by-global-id-business-logic" doc:name="get-account-by-global-id-business-logic"/>
+  </flow>
+
+  <!-- GET /accounts/transactions -->
+  <flow name="get:\accounts\transactions:global-financial-account-system-api-config">
+    <ee:transform doc:name="Build Query Parameters">
+      <ee:message>
+        <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+  accountGlobalId: attributes.queryParams.accountGlobalId default null,
+  startDate: attributes.queryParams.startDate default null,
+  endDate: attributes.queryParams.endDate default null,
+  limit: (attributes.queryParams.limit as Number default 100) as String,
+  offset: (attributes.queryParams.offset as Number default 0) as String
+}]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+    <flow-ref name="get-transactions-business-logic" doc:name="get-transactions-business-logic"/>
+  </flow>
+
+  <!-- POST /accounts/transactions -->
+  <flow name="post:\accounts\transactions:global-financial-account-system-api-config">
+    <flow-ref name="upsert-transaction-business-logic" doc:name="upsert-transaction-business-logic"/>
+  </flow>
+
+  <!-- GET /accounts/cards -->
+  <flow name="get:\accounts\cards:global-financial-account-system-api-config">
+    <ee:transform doc:name="Build Query Parameters">
+      <ee:message>
+        <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+  customerGlobalId: attributes.queryParams.customerGlobalId default null,
+  accountGlobalId: attributes.queryParams.accountGlobalId default null,
+  limit: (attributes.queryParams.limit as Number default 100) as String,
+  offset: (attributes.queryParams.offset as Number default 0) as String
+}]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+    <flow-ref name="get-cards-business-logic" doc:name="get-cards-business-logic"/>
+  </flow>
+
+  <!-- POST /accounts/cards -->
+  <flow name="post:\accounts\cards:global-financial-account-system-api-config">
+    <flow-ref name="upsert-card-business-logic" doc:name="upsert-card-business-logic"/>
+  </flow>
+
+</mule>
+
