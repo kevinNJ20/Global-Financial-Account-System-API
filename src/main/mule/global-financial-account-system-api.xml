@@ -81,10 +81,9 @@ vars.accounts map ((account) -> {
 })]]></ee:set-payload>
         </ee:message>
       </ee:transform>
-
-      <http:response statusCode="200" doc:name="HTTP Response"/>
       
-      <error-handler>
+      <set-variable value="200" doc:name="httpStatus" doc:id="483c74a5-55a1-4791-af52-5b324a45da9e" variableName="httpStatus" />
+			<error-handler>
         <on-error-propagate type="DB:QUERY_EXECUTION,DB:CONNECTIVITY" enableNotifications="true" logException="true" doc:name="Database Error">
           <ee:transform doc:name="Transform Error">
             <ee:message>
@@ -100,8 +99,9 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
           </ee:transform>
-          <http:response statusCode="500" doc:name="HTTP Response"/>
-        </on-error-propagate>
+					<set-variable value="500" doc:name="httpStatus" doc:id="10601b59-481e-467f-903b-1b03ae532056" variableName="httpStatus" />
+        
+</on-error-propagate>
       </error-handler>
     </try>
   </flow>
@@ -235,10 +235,9 @@ var owners = payload
 }]]></ee:set-payload>
         </ee:message>
       </ee:transform>
-
-      <http:response statusCode="#[vars.account.global_id == null ? 201 : 200]" doc:name="HTTP Response"/>
       
-      <error-handler>
+      <set-variable value="#[vars.account.global_id == null ? 201 : 200]" doc:name="httpStatus" doc:id="1fe600b2-02d2-401d-9f98-f3abaa59216a" variableName="httpStatus" />
+			<error-handler>
         <on-error-propagate type="DB:QUERY_EXECUTION,DB:CONNECTIVITY" enableNotifications="true" logException="true" doc:name="Database Error">
           <ee:transform doc:name="Transform Error">
             <ee:message>
@@ -254,8 +253,9 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
           </ee:transform>
-          <http:response statusCode="500" doc:name="HTTP Response"/>
-        </on-error-propagate>
+					<set-variable value="500" doc:name="httpStatus" doc:id="68b3142c-6df5-4cc0-946b-109c8a956796" variableName="httpStatus" />
+        
+</on-error-propagate>
       </error-handler>
     </try>
   </flow>
@@ -317,8 +317,9 @@ var owners = payload
 }]]></ee:set-payload>
             </ee:message>
           </ee:transform>
-          <http:response statusCode="200" doc:name="HTTP Response"/>
-        </when>
+					<set-variable value="200" doc:name="httpStatus" doc:id="7f4ee5f0-842b-42d1-85da-33fc9e6caa19" variableName="httpStatus" />
+        
+</when>
         <otherwise>
           <ee:transform doc:name="Error Response">
             <ee:message>
@@ -334,8 +335,9 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
           </ee:transform>
-          <http:response statusCode="404" doc:name="HTTP Response"/>
-        </otherwise>
+					<set-variable value="404" doc:name="httpStatus" doc:id="0533ce3b-fca3-431f-aa9c-49e989012164" variableName="httpStatus" />
+        
+</otherwise>
       </choice>
       
       <error-handler>
@@ -354,8 +356,9 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
           </ee:transform>
-          <http:response statusCode="500" doc:name="HTTP Response"/>
-        </on-error-propagate>
+					<set-variable value="500" doc:name="httpStatus" doc:id="5879a5c8-5904-4c80-a9d6-0f0ca837fe81" variableName="httpStatus" />
+        
+</on-error-propagate>
       </error-handler>
     </try>
   </flow>
@@ -408,10 +411,9 @@ payload map ((txn) -> {
 })]]></ee:set-payload>
         </ee:message>
       </ee:transform>
-
-      <http:response statusCode="200" doc:name="HTTP Response"/>
       
-      <error-handler>
+      <set-variable value="200" doc:name="httpStatus" doc:id="f6cc901e-3253-40c4-a299-de245b5cb427" variableName="httpStatus" />
+			<error-handler>
         <on-error-propagate type="DB:QUERY_EXECUTION,DB:CONNECTIVITY" enableNotifications="true" logException="true" doc:name="Database Error">
           <ee:transform doc:name="Transform Error">
             <ee:message>
@@ -427,8 +429,9 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
           </ee:transform>
-          <http:response statusCode="500" doc:name="HTTP Response"/>
-        </on-error-propagate>
+					<set-variable value="500" doc:name="httpStatus" doc:id="b9b1d147-9d07-4dd8-8706-92bd0127ac99" variableName="httpStatus" />
+        
+</on-error-propagate>
       </error-handler>
     </try>
   </flow>
@@ -544,10 +547,9 @@ var txn = payload[0]
 }]]></ee:set-payload>
         </ee:message>
       </ee:transform>
-
-      <http:response statusCode="#[payload[0].global_id == null ? 201 : 200]" doc:name="HTTP Response"/>
       
-      <error-handler>
+      <set-variable value="#[payload[0].global_id == null ? 201 : 200]" doc:name="httpStatus" doc:id="35b5529c-65b9-4302-9881-b597777e5567" variableName="httpStatus" />
+			<error-handler>
         <on-error-propagate type="DB:QUERY_EXECUTION,DB:CONNECTIVITY" enableNotifications="true" logException="true" doc:name="Database Error">
           <ee:transform doc:name="Transform Error">
             <ee:message>
@@ -563,8 +565,9 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
           </ee:transform>
-          <http:response statusCode="500" doc:name="HTTP Response"/>
-        </on-error-propagate>
+					<set-variable value="500" doc:name="httpStatus" doc:id="a326bbd5-eafe-43c9-9102-b6c2dbd332ae" variableName="httpStatus" />
+        
+</on-error-propagate>
       </error-handler>
     </try>
   </flow>
@@ -618,10 +621,9 @@ payload map ((card) -> {
 })]]></ee:set-payload>
         </ee:message>
       </ee:transform>
-
-      <http:response statusCode="200" doc:name="HTTP Response"/>
       
-      <error-handler>
+      <set-variable value="200" doc:name="httpStatus" doc:id="ca22c6ab-0626-4027-bffd-2330240d847e" variableName="httpStatus" />
+			<error-handler>
         <on-error-propagate type="DB:QUERY_EXECUTION,DB:CONNECTIVITY" enableNotifications="true" logException="true" doc:name="Database Error">
           <ee:transform doc:name="Transform Error">
             <ee:message>
@@ -637,8 +639,9 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
           </ee:transform>
-          <http:response statusCode="500" doc:name="HTTP Response"/>
-        </on-error-propagate>
+					<set-variable value="500" doc:name="httpStatus" doc:id="a9baaaed-880d-4fff-88bd-5b4116324fdb" variableName="httpStatus" />
+        
+</on-error-propagate>
       </error-handler>
     </try>
   </flow>
@@ -758,10 +761,9 @@ var card = payload[0]
 }]]></ee:set-payload>
         </ee:message>
       </ee:transform>
-
-      <http:response statusCode="#[payload[0].global_id == null ? 201 : 200]" doc:name="HTTP Response"/>
       
-      <error-handler>
+      <set-variable value="#[payload[0].global_id == null ? 201 : 200]" doc:name="httpStatus" doc:id="4f2314a2-5df7-4eb1-802b-b325bffa7a9b" variableName="httpStatus" />
+			<error-handler>
         <on-error-propagate type="DB:QUERY_EXECUTION,DB:CONNECTIVITY" enableNotifications="true" logException="true" doc:name="Database Error">
           <ee:transform doc:name="Transform Error">
             <ee:message>
@@ -777,8 +779,9 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
           </ee:transform>
-          <http:response statusCode="500" doc:name="HTTP Response"/>
-        </on-error-propagate>
+					<set-variable value="500" doc:name="httpStatus" doc:id="4bb6660e-e3bc-4407-aa41-6175fd07760c" variableName="httpStatus" />
+        
+</on-error-propagate>
       </error-handler>
     </try>
   </flow>
