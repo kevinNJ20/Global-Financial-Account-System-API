@@ -21,7 +21,7 @@
   <!-- Supabase Database Configuration -->
   <db:config name="Database_Config" doc:name="Database Config">
     <db:generic-connection 
-      driverClassName="org.postgresql.Driver" 
+      driverClassName="org.h2.Driver" 
       url="${supabase.db.url}" 
       user="${supabase.db.user}" 
       password="${supabase.db.password}">

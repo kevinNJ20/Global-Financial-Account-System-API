@@ -33,7 +33,10 @@ LIMIT (:limit)::integer OFFSET (:offset)::integer]]></db:sql>
 
       <ee:transform doc:name="Store Accounts">
         <ee:variables>
-          <ee:set-variable variableName="accounts"><![CDATA[#[payload]]]></ee:set-variable>
+          <ee:set-variable variableName="accounts"><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-variable>
         </ee:variables>
       </ee:transform>
 
@@ -128,8 +131,14 @@ output application/java
 }]]></ee:set-payload>
       </ee:message>
       <ee:variables>
-        <ee:set-variable variableName="accountData"><![CDATA[#[payload]]]></ee:set-variable>
-        <ee:set-variable variableName="owners"><![CDATA[#[payload.owners default []]]></ee:set-variable>
+        <ee:set-variable variableName="accountData"><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-variable>
+        <ee:set-variable variableName="owners"><![CDATA[%dw 2.0
+output application/java
+---
+payload.owners default []]]></ee:set-variable>
       </ee:variables>
     </ee:transform>
 
@@ -177,8 +186,14 @@ RETURNING id, global_id, account_number, account_type, account_name, currency,
 
       <ee:transform doc:name="Store Account and Global ID">
         <ee:variables>
-          <ee:set-variable variableName="account"><![CDATA[#[payload[0]]]></ee:set-variable>
-          <ee:set-variable variableName="accountGlobalId"><![CDATA[#[payload[0].global_id]]]></ee:set-variable>
+          <ee:set-variable variableName="account"><![CDATA[%dw 2.0
+output application/java
+---
+payload[0]]]></ee:set-variable>
+          <ee:set-variable variableName="accountGlobalId"><![CDATA[%dw 2.0
+output application/java
+---
+payload[0].global_id]]></ee:set-variable>
         </ee:variables>
       </ee:transform>
 
@@ -277,7 +292,10 @@ WHERE global_id = :accountGlobalId]]></db:sql>
         <when expression="#[sizeOf(payload) > 0]">
           <ee:transform doc:name="Store Account">
             <ee:variables>
-              <ee:set-variable variableName="account"><![CDATA[#[payload[0]]]></ee:set-variable>
+              <ee:set-variable variableName="account"><![CDATA[%dw 2.0
+output application/java
+---
+payload[0]]]></ee:set-variable>
             </ee:variables>
           </ee:transform>
 
