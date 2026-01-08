@@ -11,25 +11,32 @@
   <!-- GET /accounts - Business Logic Flow -->
   <flow name="get-accounts-business-logic" doc:name="get-accounts-business-logic">
     <try doc:name="Try">
-      <db:select doc:name="Select Global Accounts" config-ref="Database_Config">
-        <db:sql><![CDATA[SELECT 
-  id, global_id, account_number, account_type, account_name, currency,
-  balance, available_balance, status, opened_date, closed_date, interest_rate,
-  created_at, updated_at
-FROM global_accounts
-WHERE 
-  (:globalId IS NULL OR global_id::text = :globalId)
-  AND (:accountNumber IS NULL OR account_number = :accountNumber)
-  AND (:accountType IS NULL OR account_type = :accountType)
-  AND (:customerGlobalId IS NULL OR EXISTS (
-    SELECT 1 FROM global_account_owners gao 
-    WHERE gao.account_global_id = global_accounts.global_id 
-    AND gao.customer_global_id::text = :customerGlobalId
-  ))
-ORDER BY created_at DESC
-LIMIT (:limit)::integer OFFSET (:offset)::integer]]></db:sql>
-        <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
-      </db:select>
+      <!-- MOCK: Remplacement de l'appel DB select par des données mockées -->
+      <ee:transform doc:name="Mock Select Global Accounts" doc:id="mock-select-global-accounts">
+        <ee:message>
+          <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[
+  {
+    id: 1,
+    global_id: "550e8400-e29b-41d4-a716-446655440000",
+    account_number: "ACC001",
+    account_type: "Checking",
+    account_name: "Compte Courant Principal",
+    currency: "USD",
+    balance: 5000.00,
+    available_balance: 4950.00,
+    status: "Active",
+    opened_date: "2024-01-01",
+    closed_date: null,
+    interest_rate: 0.01,
+    created_at: "2024-01-01T10:00:00Z",
+    updated_at: "2024-01-01T10:00:00Z"
+  }
+] default []]]></ee:set-payload>
+        </ee:message>
+      </ee:transform>
 
       <ee:transform doc:name="Store Accounts">
         <ee:variables>
@@ -41,12 +48,20 @@ payload]]></ee:set-variable>
       </ee:transform>
 
       <foreach doc:name="Get Owners for Each Account">
-        <db:select doc:name="Get Account Owners" config-ref="Database_Config">
-          <db:sql><![CDATA[SELECT customer_global_id, relationship_type
-FROM global_account_owners
-WHERE account_global_id = :accountGlobalId]]></db:sql>
-          <db:input-parameters><![CDATA[#[{accountGlobalId: payload.global_id}]]]></db:input-parameters>
-        </db:select>
+        <!-- MOCK: Remplacement de l'appel DB select par des données mockées -->
+        <ee:transform doc:name="Mock Get Account Owners" doc:id="mock-get-account-owners">
+          <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[
+  {
+    customer_global_id: "550e8400-e29b-41d4-a716-446655440000",
+    relationship_type: "Primary"
+  }
+] default []]]></ee:set-payload>
+          </ee:message>
+        </ee:transform>
         <ee:transform doc:name="Add Owners">
           <ee:variables>
             <ee:set-variable variableName="accountWithOwners"><![CDATA[%dw 2.0
@@ -145,42 +160,58 @@ payload.owners default []]]></ee:set-variable>
     <try doc:name="Try">
       <choice doc:name="Upsert Strategy">
         <when expression="#[vars.accountData.global_id != null]">
-          <db:update doc:name="Update Account by Global ID" config-ref="Database_Config">
-            <db:sql><![CDATA[UPDATE global_accounts SET
-  account_number = :account_number,
-  account_type = :account_type,
-  account_name = :account_name,
-  currency = :currency,
-  balance = :balance,
-  available_balance = :available_balance,
-  status = :status,
-  opened_date = :opened_date,
-  closed_date = :closed_date,
-  interest_rate = :interest_rate,
-  updated_at = CURRENT_TIMESTAMP
-WHERE global_id = :global_id
-RETURNING id, global_id, account_number, account_type, account_name, currency,
-  balance, available_balance, status, opened_date, closed_date, interest_rate,
-  created_at, updated_at]]></db:sql>
-            <db:input-parameters><![CDATA[#[vars.accountData]]]></db:input-parameters>
-          </db:update>
+          <!-- MOCK: Remplacement de l'appel DB update par des données mockées -->
+          <ee:transform doc:name="Mock Update Account by Global ID" doc:id="mock-update-account-global-id">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var data = vars.accountData
+---
+[{
+  id: 1,
+  global_id: data.global_id,
+  account_number: data.account_number,
+  account_type: data.account_type,
+  account_name: data.account_name,
+  currency: data.currency,
+  balance: data.balance,
+  available_balance: data.available_balance,
+  status: data.status,
+  opened_date: data.opened_date,
+  closed_date: data.closed_date,
+  interest_rate: data.interest_rate,
+  created_at: "2024-01-01T10:00:00Z",
+  updated_at: now()
+}]]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
         </when>
         <otherwise>
-          <db:insert doc:name="Insert New Account" config-ref="Database_Config">
-            <db:sql><![CDATA[INSERT INTO global_accounts (
-  account_number, account_type, account_name, currency, balance,
-  available_balance, status, opened_date, closed_date, interest_rate,
-  created_at, updated_at
-) VALUES (
-  :account_number, :account_type, :account_name, :currency, :balance,
-  :available_balance, :status, :opened_date, :closed_date, :interest_rate,
-  CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-)
-RETURNING id, global_id, account_number, account_type, account_name, currency,
-  balance, available_balance, status, opened_date, closed_date, interest_rate,
-  created_at, updated_at]]></db:sql>
-            <db:input-parameters><![CDATA[#[vars.accountData]]]></db:input-parameters>
-          </db:insert>
+          <!-- MOCK: Remplacement de l'appel DB insert par des données mockées -->
+          <ee:transform doc:name="Mock Insert New Account" doc:id="mock-insert-new-account">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var data = vars.accountData
+---
+[{
+  id: 1,
+  global_id: "550e8400-e29b-41d4-a716-446655440000",
+  account_number: data.account_number,
+  account_type: data.account_type,
+  account_name: data.account_name,
+  currency: data.currency,
+  balance: data.balance,
+  available_balance: data.available_balance,
+  status: data.status,
+  opened_date: data.opened_date,
+  closed_date: data.closed_date,
+  interest_rate: data.interest_rate,
+  created_at: now(),
+  updated_at: now()
+}]]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
         </otherwise>
       </choice>
 
@@ -197,29 +228,46 @@ payload[0].global_id]]></ee:set-variable>
         </ee:variables>
       </ee:transform>
 
-      <db:delete doc:name="Delete Old Owners" config-ref="Database_Config">
-        <db:sql><![CDATA[DELETE FROM global_account_owners WHERE account_global_id = :accountGlobalId]]></db:sql>
-        <db:input-parameters><![CDATA[#[{accountGlobalId: vars.accountGlobalId}]]]></db:input-parameters>
-      </db:delete>
+      <!-- MOCK: Remplacement de l'appel DB delete par des données mockées -->
+      <ee:transform doc:name="Mock Delete Old Owners" doc:id="mock-delete-old-owners">
+        <ee:message>
+          <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+  success: true
+}]]></ee:set-payload>
+        </ee:message>
+      </ee:transform>
 
       <foreach doc:name="Insert Owners">
-        <db:insert config-ref="Database_Config">
-          <db:sql><![CDATA[INSERT INTO global_account_owners (account_global_id, customer_global_id, relationship_type)
-VALUES (:accountGlobalId, :customerGlobalId, :relationshipType)]]></db:sql>
-          <db:input-parameters><![CDATA[#[{
-            accountGlobalId: vars.accountGlobalId,
-            customerGlobalId: payload.customerGlobalId,
-            relationshipType: payload.relationshipType default 'Primary'
-          }]]]></db:input-parameters>
-        </db:insert>
+        <!-- MOCK: Remplacement de l'appel DB insert par des données mockées -->
+        <ee:transform doc:name="Mock Insert Owner" doc:id="mock-insert-owner">
+          <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+  success: true
+}]]></ee:set-payload>
+          </ee:message>
+        </ee:transform>
       </foreach>
 
-      <db:select doc:name="Get Owners" config-ref="Database_Config">
-        <db:sql><![CDATA[SELECT customer_global_id, relationship_type
-FROM global_account_owners
-WHERE account_global_id = :accountGlobalId]]></db:sql>
-        <db:input-parameters><![CDATA[#[{accountGlobalId: vars.accountGlobalId}]]]></db:input-parameters>
-      </db:select>
+      <!-- MOCK: Remplacement de l'appel DB select par des données mockées -->
+      <ee:transform doc:name="Mock Get Owners" doc:id="mock-get-owners-global">
+        <ee:message>
+          <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[
+  {
+    customer_global_id: "550e8400-e29b-41d4-a716-446655440000",
+    relationship_type: "Primary"
+  }
+] default []]]></ee:set-payload>
+        </ee:message>
+      </ee:transform>
 
       <ee:transform doc:name="Transform Response">
         <ee:message>
@@ -278,15 +326,31 @@ output application/json
   <!-- GET /accounts/{accountGlobalId} - Récupérer un compte par Global ID -->
   <flow name="get-account-by-global-id-business-logic" doc:name="get-account-by-global-id-business-logic">
     <try doc:name="Try">
-      <db:select doc:name="Select Account by Global ID" config-ref="Database_Config">
-        <db:sql><![CDATA[SELECT 
-  id, global_id, account_number, account_type, account_name, currency,
-  balance, available_balance, status, opened_date, closed_date, interest_rate,
-  created_at, updated_at
-FROM global_accounts
-WHERE global_id = :accountGlobalId]]></db:sql>
-        <db:input-parameters><![CDATA[#[{accountGlobalId: vars.accountGlobalId}]]]></db:input-parameters>
-      </db:select>
+      <!-- MOCK: Remplacement de l'appel DB select par des données mockées -->
+      <ee:transform doc:name="Mock Select Account by Global ID" doc:id="mock-select-account-global-id">
+        <ee:message>
+          <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var accountGlobalId = vars.accountGlobalId default "550e8400-e29b-41d4-a716-446655440000"
+---
+[{
+  id: 1,
+  global_id: accountGlobalId,
+  account_number: "ACC001",
+  account_type: "Checking",
+  account_name: "Compte Courant Principal",
+  currency: "USD",
+  balance: 5000.00,
+  available_balance: 4950.00,
+  status: "Active",
+  opened_date: "2024-01-01",
+  closed_date: null,
+  interest_rate: 0.01,
+  created_at: "2024-01-01T10:00:00Z",
+  updated_at: "2024-01-01T10:00:00Z"
+}] default []]]></ee:set-payload>
+        </ee:message>
+      </ee:transform>
 
       <choice doc:name="Account Found?">
         <when expression="#[sizeOf(payload) > 0]">
@@ -299,12 +363,20 @@ payload[0]]]></ee:set-variable>
             </ee:variables>
           </ee:transform>
 
-          <db:select doc:name="Get Owners" config-ref="Database_Config">
-            <db:sql><![CDATA[SELECT customer_global_id, relationship_type
-FROM global_account_owners
-WHERE account_global_id = :accountGlobalId]]></db:sql>
-            <db:input-parameters><![CDATA[#[{accountGlobalId: vars.account.global_id}]]]></db:input-parameters>
-          </db:select>
+          <!-- MOCK: Remplacement de l'appel DB select par des données mockées -->
+          <ee:transform doc:name="Mock Get Owners" doc:id="mock-get-owners-2">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[
+  {
+    customer_global_id: "550e8400-e29b-41d4-a716-446655440000",
+    relationship_type: "Primary"
+  }
+] default []]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
 
           <ee:transform doc:name="Transform Response">
             <ee:message>
@@ -384,21 +456,38 @@ output application/json
   <!-- GET /transactions - Business Logic Flow -->
   <flow name="get-transactions-business-logic" doc:name="get-transactions-business-logic">
     <try doc:name="Try">
-      <db:select doc:name="Select Transactions" config-ref="Database_Config">
-        <db:sql><![CDATA[SELECT 
-  id, global_id, transaction_number, account_global_id, transaction_type, amount, currency,
-  transaction_date, value_date, description, merchant_name, category,
-  check_number, reference_number, related_account_global_id, status,
-  dispute_status, dispute_reason, created_at, updated_at
-FROM global_transactions
-WHERE 
-  (:accountGlobalId IS NULL OR account_global_id::text = :accountGlobalId)
-  AND (:startDate IS NULL OR transaction_date::date >= :startDate::date)
-  AND (:endDate IS NULL OR transaction_date::date <= :endDate::date)
-ORDER BY transaction_date DESC
-LIMIT (:limit)::integer OFFSET (:offset)::integer]]></db:sql>
-        <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
-      </db:select>
+      <!-- MOCK: Remplacement de l'appel DB select par des données mockées -->
+      <ee:transform doc:name="Mock Select Transactions" doc:id="mock-select-transactions-global">
+        <ee:message>
+          <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[
+  {
+    id: 1,
+    global_id: "550e8400-e29b-41d4-a716-446655440001",
+    transaction_number: "TXN001",
+    account_global_id: "550e8400-e29b-41d4-a716-446655440000",
+    transaction_type: "Debit",
+    amount: -100.00,
+    currency: "USD",
+    transaction_date: "2024-01-15",
+    value_date: "2024-01-15",
+    description: "Purchase at Store",
+    merchant_name: "Store ABC",
+    category: "Retail",
+    check_number: null,
+    reference_number: "REF001",
+    related_account_global_id: null,
+    status: "Posted",
+    dispute_status: "None",
+    dispute_reason: null,
+    created_at: "2024-01-15T10:00:00Z",
+    updated_at: "2024-01-15T10:00:00Z"
+  }
+] default []]]></ee:set-payload>
+        </ee:message>
+      </ee:transform>
 
       <ee:transform doc:name="Transform Response">
         <ee:message>
@@ -486,52 +575,70 @@ output application/java
     <try doc:name="Try">
       <choice doc:name="Upsert Strategy">
         <when expression="#[payload.global_id != null]">
-          <db:update doc:name="Update Transaction" config-ref="Database_Config">
-            <db:sql><![CDATA[UPDATE global_transactions SET
-  transaction_number = :transaction_number,
-  account_global_id = :account_global_id,
-  transaction_type = :transaction_type,
-  amount = :amount,
-  currency = :currency,
-  transaction_date = :transaction_date,
-  value_date = :value_date,
-  description = :description,
-  merchant_name = :merchant_name,
-  category = :category,
-  check_number = :check_number,
-  reference_number = :reference_number,
-  related_account_global_id = :related_account_global_id,
-  status = :status,
-  dispute_status = :dispute_status,
-  dispute_reason = :dispute_reason,
-  updated_at = CURRENT_TIMESTAMP
-WHERE global_id = :global_id
-RETURNING id, global_id, transaction_number, account_global_id, transaction_type, amount, currency,
-  transaction_date, value_date, description, merchant_name, category,
-  check_number, reference_number, related_account_global_id, status,
-  dispute_status, dispute_reason, created_at, updated_at]]></db:sql>
-            <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
-          </db:update>
+          <!-- MOCK: Remplacement de l'appel DB update par des données mockées -->
+          <ee:transform doc:name="Mock Update Transaction" doc:id="mock-update-transaction-global">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var data = payload
+---
+[{
+  id: 1,
+  global_id: data.global_id,
+  transaction_number: data.transaction_number,
+  account_global_id: data.account_global_id,
+  transaction_type: data.transaction_type,
+  amount: data.amount,
+  currency: data.currency,
+  transaction_date: data.transaction_date,
+  value_date: data.value_date,
+  description: data.description,
+  merchant_name: data.merchant_name,
+  category: data.category,
+  check_number: data.check_number,
+  reference_number: data.reference_number,
+  related_account_global_id: data.related_account_global_id,
+  status: data.status,
+  dispute_status: data.dispute_status,
+  dispute_reason: data.dispute_reason,
+  created_at: "2024-01-15T10:00:00Z",
+  updated_at: now()
+}]]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
         </when>
         <otherwise>
-          <db:insert doc:name="Insert New Transaction" config-ref="Database_Config">
-            <db:sql><![CDATA[INSERT INTO global_transactions (
-  transaction_number, account_global_id, transaction_type, amount, currency,
-  transaction_date, value_date, description, merchant_name, category,
-  check_number, reference_number, related_account_global_id, status,
-  dispute_status, dispute_reason, created_at, updated_at
-) VALUES (
-  :transaction_number, :account_global_id, :transaction_type, :amount, :currency,
-  :transaction_date, :value_date, :description, :merchant_name, :category,
-  :check_number, :reference_number, :related_account_global_id, :status,
-  :dispute_status, :dispute_reason, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-)
-RETURNING id, global_id, transaction_number, account_global_id, transaction_type, amount, currency,
-  transaction_date, value_date, description, merchant_name, category,
-  check_number, reference_number, related_account_global_id, status,
-  dispute_status, dispute_reason, created_at, updated_at]]></db:sql>
-            <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
-          </db:insert>
+          <!-- MOCK: Remplacement de l'appel DB insert par des données mockées -->
+          <ee:transform doc:name="Mock Insert New Transaction" doc:id="mock-insert-transaction-global">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var data = payload
+---
+[{
+  id: 1,
+  global_id: "550e8400-e29b-41d4-a716-446655440001",
+  transaction_number: data.transaction_number,
+  account_global_id: data.account_global_id,
+  transaction_type: data.transaction_type,
+  amount: data.amount,
+  currency: data.currency,
+  transaction_date: data.transaction_date,
+  value_date: data.value_date,
+  description: data.description,
+  merchant_name: data.merchant_name,
+  category: data.category,
+  check_number: data.check_number,
+  reference_number: data.reference_number,
+  related_account_global_id: data.related_account_global_id,
+  status: data.status,
+  dispute_status: data.dispute_status,
+  dispute_reason: data.dispute_reason,
+  created_at: now(),
+  updated_at: now()
+}]]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
         </otherwise>
       </choice>
 
@@ -593,21 +700,37 @@ output application/json
   <!-- GET /cards - Business Logic Flow -->
   <flow name="get-cards-business-logic" doc:name="get-cards-business-logic">
     <try doc:name="Try">
-      <db:select doc:name="Select Global Cards" config-ref="Database_Config">
-        <db:sql><![CDATA[SELECT 
-  id, global_id, card_number, card_type, card_network, customer_global_id, account_global_id,
-  cardholder_name, expiration_date, status, credit_limit, available_credit,
-  daily_purchase_limit, daily_atm_withdrawal_limit,
-  international_transactions_enabled, online_transactions_enabled,
-  issued_date, created_at, updated_at
-FROM global_cards
-WHERE 
-  (:customerGlobalId IS NULL OR customer_global_id::text = :customerGlobalId)
-  AND (:accountGlobalId IS NULL OR account_global_id::text = :accountGlobalId)
-ORDER BY created_at DESC
-LIMIT (:limit)::integer OFFSET (:offset)::integer]]></db:sql>
-        <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
-      </db:select>
+      <!-- MOCK: Remplacement de l'appel DB select par des données mockées -->
+      <ee:transform doc:name="Mock Select Global Cards" doc:id="mock-select-global-cards">
+        <ee:message>
+          <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[
+  {
+    id: 1,
+    global_id: "550e8400-e29b-41d4-a716-446655440002",
+    card_number: "4532123456789012",
+    card_type: "Credit",
+    card_network: "Visa",
+    customer_global_id: "550e8400-e29b-41d4-a716-446655440000",
+    account_global_id: "550e8400-e29b-41d4-a716-446655440000",
+    cardholder_name: "Jean Dupont",
+    expiration_date: "2025-12-31",
+    status: "Active",
+    credit_limit: 5000.00,
+    available_credit: 4500.00,
+    daily_purchase_limit: 1000.00,
+    daily_atm_withdrawal_limit: 500.00,
+    international_transactions_enabled: true,
+    online_transactions_enabled: true,
+    issued_date: "2024-01-01",
+    created_at: "2024-01-01T10:00:00Z",
+    updated_at: "2024-01-01T10:00:00Z"
+  }
+] default []]]></ee:set-payload>
+        </ee:message>
+      </ee:transform>
 
       <ee:transform doc:name="Transform Response">
         <ee:message>
@@ -696,55 +819,68 @@ var controls = payload.controls default {}
     <try doc:name="Try">
       <choice doc:name="Upsert Strategy">
         <when expression="#[payload.global_id != null]">
-          <db:update doc:name="Update Card" config-ref="Database_Config">
-            <db:sql><![CDATA[UPDATE global_cards SET
-  card_number = :card_number,
-  card_type = :card_type,
-  card_network = :card_network,
-  customer_global_id = :customer_global_id,
-  account_global_id = :account_global_id,
-  cardholder_name = :cardholder_name,
-  expiration_date = :expiration_date,
-  status = :status,
-  credit_limit = :credit_limit,
-  available_credit = :available_credit,
-  daily_purchase_limit = :daily_purchase_limit,
-  daily_atm_withdrawal_limit = :daily_atm_withdrawal_limit,
-  international_transactions_enabled = :international_transactions_enabled,
-  online_transactions_enabled = :online_transactions_enabled,
-  issued_date = :issued_date,
-  updated_at = CURRENT_TIMESTAMP
-WHERE global_id = :global_id
-RETURNING id, global_id, card_number, card_type, card_network, customer_global_id, account_global_id,
-  cardholder_name, expiration_date, status, credit_limit, available_credit,
-  daily_purchase_limit, daily_atm_withdrawal_limit,
-  international_transactions_enabled, online_transactions_enabled,
-  issued_date, created_at, updated_at]]></db:sql>
-            <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
-          </db:update>
+          <!-- MOCK: Remplacement de l'appel DB update par des données mockées -->
+          <ee:transform doc:name="Mock Update Card" doc:id="mock-update-card-global">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var data = payload
+---
+[{
+  id: 1,
+  global_id: data.global_id,
+  card_number: data.card_number,
+  card_type: data.card_type,
+  card_network: data.card_network,
+  customer_global_id: data.customer_global_id,
+  account_global_id: data.account_global_id,
+  cardholder_name: data.cardholder_name,
+  expiration_date: data.expiration_date,
+  status: data.status,
+  credit_limit: data.credit_limit,
+  available_credit: data.available_credit,
+  daily_purchase_limit: data.daily_purchase_limit,
+  daily_atm_withdrawal_limit: data.daily_atm_withdrawal_limit,
+  international_transactions_enabled: data.international_transactions_enabled,
+  online_transactions_enabled: data.online_transactions_enabled,
+  issued_date: data.issued_date,
+  created_at: "2024-01-01T10:00:00Z",
+  updated_at: now()
+}]]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
         </when>
         <otherwise>
-          <db:insert doc:name="Insert New Card" config-ref="Database_Config">
-            <db:sql><![CDATA[INSERT INTO global_cards (
-  card_number, card_type, card_network, customer_global_id, account_global_id,
-  cardholder_name, expiration_date, status, credit_limit, available_credit,
-  daily_purchase_limit, daily_atm_withdrawal_limit,
-  international_transactions_enabled, online_transactions_enabled,
-  issued_date, created_at, updated_at
-) VALUES (
-  :card_number, :card_type, :card_network, :customer_global_id, :account_global_id,
-  :cardholder_name, :expiration_date, :status, :credit_limit, :available_credit,
-  :daily_purchase_limit, :daily_atm_withdrawal_limit,
-  :international_transactions_enabled, :online_transactions_enabled,
-  :issued_date, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-)
-RETURNING id, global_id, card_number, card_type, card_network, customer_global_id, account_global_id,
-  cardholder_name, expiration_date, status, credit_limit, available_credit,
-  daily_purchase_limit, daily_atm_withdrawal_limit,
-  international_transactions_enabled, online_transactions_enabled,
-  issued_date, created_at, updated_at]]></db:sql>
-            <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
-          </db:insert>
+          <!-- MOCK: Remplacement de l'appel DB insert par des données mockées -->
+          <ee:transform doc:name="Mock Insert New Card" doc:id="mock-insert-card-global">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var data = payload
+---
+[{
+  id: 1,
+  global_id: "550e8400-e29b-41d4-a716-446655440002",
+  card_number: data.card_number,
+  card_type: data.card_type,
+  card_network: data.card_network,
+  customer_global_id: data.customer_global_id,
+  account_global_id: data.account_global_id,
+  cardholder_name: data.cardholder_name,
+  expiration_date: data.expiration_date,
+  status: data.status,
+  credit_limit: data.credit_limit,
+  available_credit: data.available_credit,
+  daily_purchase_limit: data.daily_purchase_limit,
+  daily_atm_withdrawal_limit: data.daily_atm_withdrawal_limit,
+  international_transactions_enabled: data.international_transactions_enabled,
+  online_transactions_enabled: data.online_transactions_enabled,
+  issued_date: data.issued_date,
+  created_at: now(),
+  updated_at: now()
+}]]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
         </otherwise>
       </choice>
 
