@@ -1,33 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
-      xmlns:http="http://www.mulesoft.org/schema/mule/http"
-      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-      xmlns="http://www.mulesoft.org/schema/mule/core"
-      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-      http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-      http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd
-      http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-
-  <!-- APIkit Router Configuration -->
-
-  <!-- Main HTTP Listener with APIkit Router -->
-  <flow name="main">
-    <http:listener config-ref="HTTP_Listener_config" path="/api/*" doc:name="HTTP Listener">
-			<http:response statusCode="#[vars.httpStatus default 200]">
-				<http:headers ><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
-			</http:response>
-			<http:error-response statusCode="#[vars.httpStatus default 500]" >
-				<http:headers ><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
-			</http:error-response>
-		</http:listener>
-    <apikit:router doc:name="APIkit Router" doc:id="1a8a2606-4f36-46cf-8b63-eb187bb43fb5" config-ref="global-financial-account-system-api-config"/>
-		<error-handler>
-      <on-error-propagate type="APIKIT:NOT_FOUND" enableNotifications="true" logException="true" doc:name="On Error Propagate">
-        <ee:transform doc:name="Transform Error Response">
-          <ee:message>
-            <ee:set-payload><![CDATA[%dw 2.0
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd       http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd       http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd       http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <!-- APIkit Router Configuration -->
+    <!-- Main HTTP Listener with APIkit Router -->
+    <flow name="main">
+        <http:listener config-ref="HTTP_Listener_config" path="/api/*" doc:name="HTTP Listener">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router doc:name="APIkit Router" doc:id="1a8a2606-4f36-46cf-8b63-eb187bb43fb5" config-ref="global-financial-account-system-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+                <ee:transform doc:name="Transform Error Response">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -37,14 +26,14 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-          </ee:message>
-        </ee:transform>
-        <set-variable value="404" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus"/>
-      </on-error-propagate>
-      <on-error-propagate type="APIKIT:BAD_REQUEST" enableNotifications="true" logException="true" doc:name="On Error Propagate">
-        <ee:transform doc:name="Transform Error Response">
-          <ee:message>
-            <ee:set-payload><![CDATA[%dw 2.0
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="404" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus" />
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:BAD_REQUEST" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+                <ee:transform doc:name="Transform Error Response">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -54,14 +43,14 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-          </ee:message>
-        </ee:transform>
-        <set-variable value="400" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus"/>
-      </on-error-propagate>
-      <on-error-propagate type="APIKIT:NOT_ACCEPTABLE" enableNotifications="true" logException="true" doc:name="On Error Propagate">
-        <ee:transform doc:name="Transform Error Response">
-          <ee:message>
-            <ee:set-payload><![CDATA[%dw 2.0
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="400" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus" />
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+                <ee:transform doc:name="Transform Error Response">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -71,14 +60,14 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-          </ee:message>
-        </ee:transform>
-        <set-variable value="406" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus"/>
-      </on-error-propagate>
-      <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE" enableNotifications="true" logException="true" doc:name="On Error Propagate">
-        <ee:transform doc:name="Transform Error Response">
-          <ee:message>
-            <ee:set-payload><![CDATA[%dw 2.0
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="406" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus" />
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+                <ee:transform doc:name="Transform Error Response">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -88,14 +77,14 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-          </ee:message>
-        </ee:transform>
-        <set-variable value="415" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus"/>
-      </on-error-propagate>
-      <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED" enableNotifications="true" logException="true" doc:name="On Error Propagate">
-        <ee:transform doc:name="Transform Error Response">
-          <ee:message>
-            <ee:set-payload><![CDATA[%dw 2.0
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="415" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus" />
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED" enableNotifications="true" logException="true" doc:name="On Error Propagate">
+                <ee:transform doc:name="Transform Error Response">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -105,18 +94,17 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-          </ee:message>
-        </ee:transform>
-        <set-variable value="405" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus"/>
-      </on-error-propagate>
-    </error-handler>
-  </flow>
-
-  <!-- GET /accounts -->
-  <flow name="get:\accounts:global-financial-account-system-api-config">
-    <ee:transform doc:name="Build Query Parameters">
-      <ee:message>
-        <ee:set-payload><![CDATA[%dw 2.0
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="405" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus" />
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <!-- GET /accounts -->
+    <flow name="get:\accounts:global-financial-account-system-api-config">
+        <ee:transform doc:name="Build Query Parameters">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
 output application/java
 ---
 {
@@ -127,27 +115,24 @@ output application/java
   limit: (attributes.queryParams.limit as Number default 100) as String,
   offset: (attributes.queryParams.offset as Number default 0) as String
 }]]></ee:set-payload>
-      </ee:message>
-    </ee:transform>
-    <flow-ref name="get-accounts-business-logic" doc:name="get-accounts-business-logic"/>
-  </flow>
-
-  <!-- POST /accounts -->
-  <flow name="post:\accounts:global-financial-account-system-api-config">
-    <flow-ref name="upsert-account-business-logic" doc:name="upsert-account-business-logic"/>
-  </flow>
-
-  <!-- GET /accounts/{accountGlobalId} -->
-  <flow name="get:\accounts\(accountGlobalId):global-financial-account-system-api-config">
-    <set-variable value="#[attributes.uriParams.accountGlobalId]" variableName="accountGlobalId" doc:name="Set Account Global ID"/>
-    <flow-ref name="get-account-by-global-id-business-logic" doc:name="get-account-by-global-id-business-logic"/>
-  </flow>
-
-  <!-- GET /accounts/transactions -->
-  <flow name="get:\accounts\transactions:global-financial-account-system-api-config">
-    <ee:transform doc:name="Build Query Parameters">
-      <ee:message>
-        <ee:set-payload><![CDATA[%dw 2.0
+            </ee:message>
+        </ee:transform>
+        <flow-ref name="get-accounts-business-logic" doc:name="get-accounts-business-logic" />
+    </flow>
+    <!-- POST /accounts -->
+    <flow name="post:\accounts:application\json:global-financial-account-system-api-config">
+        <flow-ref name="upsert-account-business-logic" doc:name="upsert-account-business-logic" />
+    </flow>
+    <!-- GET /accounts/{accountGlobalId} -->
+    <flow name="get:\accounts\(accountGlobalId):global-financial-account-system-api-config">
+        <set-variable value="#[attributes.uriParams.accountGlobalId]" variableName="accountGlobalId" doc:name="Set Account Global ID" />
+        <flow-ref name="get-account-by-global-id-business-logic" doc:name="get-account-by-global-id-business-logic" />
+    </flow>
+    <!-- GET /accounts/transactions -->
+    <flow name="get:\accounts\transactions:global-financial-account-system-api-config">
+        <ee:transform doc:name="Build Query Parameters">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
 output application/java
 ---
 {
@@ -157,21 +142,19 @@ output application/java
   limit: (attributes.queryParams.limit as Number default 100) as String,
   offset: (attributes.queryParams.offset as Number default 0) as String
 }]]></ee:set-payload>
-      </ee:message>
-    </ee:transform>
-    <flow-ref name="get-transactions-business-logic" doc:name="get-transactions-business-logic"/>
-  </flow>
-
-  <!-- POST /accounts/transactions -->
-  <flow name="post:\accounts\transactions:global-financial-account-system-api-config">
-    <flow-ref name="upsert-transaction-business-logic" doc:name="upsert-transaction-business-logic"/>
-  </flow>
-
-  <!-- GET /accounts/cards -->
-  <flow name="get:\accounts\cards:global-financial-account-system-api-config">
-    <ee:transform doc:name="Build Query Parameters">
-      <ee:message>
-        <ee:set-payload><![CDATA[%dw 2.0
+            </ee:message>
+        </ee:transform>
+        <flow-ref name="get-transactions-business-logic" doc:name="get-transactions-business-logic" />
+    </flow>
+    <!-- POST /accounts/transactions -->
+    <flow name="post:\accounts\transactions:application\json:global-financial-account-system-api-config">
+        <flow-ref name="upsert-transaction-business-logic" doc:name="upsert-transaction-business-logic" />
+    </flow>
+    <!-- GET /accounts/cards -->
+    <flow name="get:\accounts\cards:global-financial-account-system-api-config">
+        <ee:transform doc:name="Build Query Parameters">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
 output application/java
 ---
 {
@@ -180,30 +163,29 @@ output application/java
   limit: (attributes.queryParams.limit as Number default 100) as String,
   offset: (attributes.queryParams.offset as Number default 0) as String
 }]]></ee:set-payload>
-      </ee:message>
-    </ee:transform>
-    <flow-ref name="get-cards-business-logic" doc:name="get-cards-business-logic"/>
-  </flow>
-
-  <!-- POST /accounts/cards -->
-  <flow name="post:\accounts\cards:global-financial-account-system-api-config">
-    <flow-ref name="upsert-card-business-logic" doc:name="upsert-card-business-logic"/>
-  </flow>
-	<flow name="console" doc:id="eb870f2f-70d6-474b-9d47-9e18b23249ec" >
-		<http:listener doc:name="HTTP Listener" doc:id="495f6d19-b410-4849-9012-e970e0148fbb" config-ref="HTTP_Listener_config" path="/console/*" >
-			<http:response statusCode="#[vars.httpStatus default 200]" >
-				<http:headers ><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
-			</http:response>
-			<http:error-response statusCode="#[vars.httpStatus default 500]" >
-				<http:headers ><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
-			</http:error-response>
-		</http:listener>
-		<apikit:console doc:name="APIkit Console" doc:id="69af82b2-2918-455f-a2e0-d778e294271c" config-ref="global-financial-account-system-api-config"/>
-		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="46c163be-948e-42e2-acf5-8e1d05b33e27" type="APIKIT:NOT_FOUND" >
-				<ee:transform doc:name="Transform Error Response" doc:id="3355fad9-9edf-4ab8-a24d-ee22b8af174c" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
+            </ee:message>
+        </ee:transform>
+        <flow-ref name="get-cards-business-logic" doc:name="get-cards-business-logic" />
+    </flow>
+    <!-- POST /accounts/cards -->
+    <flow name="post:\accounts\cards:application\json:global-financial-account-system-api-config">
+        <flow-ref name="upsert-card-business-logic" doc:name="upsert-card-business-logic" />
+    </flow>
+    <flow name="console" doc:id="eb870f2f-70d6-474b-9d47-9e18b23249ec">
+        <http:listener doc:name="HTTP Listener" doc:id="495f6d19-b410-4849-9012-e970e0148fbb" config-ref="HTTP_Listener_config" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console doc:name="APIkit Console" doc:id="69af82b2-2918-455f-a2e0-d778e294271c" config-ref="global-financial-account-system-api-config" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="46c163be-948e-42e2-acf5-8e1d05b33e27" type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Error Response" doc:id="3355fad9-9edf-4ab8-a24d-ee22b8af174c">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -213,14 +195,14 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-				<set-variable value="404" doc:name="httpStatus" doc:id="f4055eed-a0cd-4ca5-934b-3df089c5eaad" variableName="httpStatus" />
-			</on-error-propagate>
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate1" doc:id="970653af-e62d-421c-9a8b-38243eb59724" type="APIKIT:BAD_REQUEST" >
-				<ee:transform doc:name="Transform Error Response" doc:id="ac009741-74b6-414f-b1ae-a2d1cd5439b8" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="404" doc:name="httpStatus" doc:id="f4055eed-a0cd-4ca5-934b-3df089c5eaad" variableName="httpStatus" />
+            </on-error-propagate>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate1" doc:id="970653af-e62d-421c-9a8b-38243eb59724" type="APIKIT:BAD_REQUEST">
+                <ee:transform doc:name="Transform Error Response" doc:id="ac009741-74b6-414f-b1ae-a2d1cd5439b8">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -230,14 +212,14 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-				<set-variable value="400" doc:name="httpStatus" doc:id="b2e15d9e-b73a-4c4c-94ad-b11f111b8744" variableName="httpStatus" />
-			</on-error-propagate>
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate2" doc:id="3976af41-9951-45b9-b98c-a861967b09e9" type="APIKIT:NOT_ACCEPTABLE" >
-				<ee:transform doc:name="Transform Error Response" doc:id="bfc911d4-cc7b-4ae9-a084-2b66b19f0862" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="400" doc:name="httpStatus" doc:id="b2e15d9e-b73a-4c4c-94ad-b11f111b8744" variableName="httpStatus" />
+            </on-error-propagate>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate2" doc:id="3976af41-9951-45b9-b98c-a861967b09e9" type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform doc:name="Transform Error Response" doc:id="bfc911d4-cc7b-4ae9-a084-2b66b19f0862">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -247,14 +229,14 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-				<set-variable value="406" doc:name="httpStatus" doc:id="c4663f55-3581-4002-897f-ca6dafcd28fc" variableName="httpStatus" />
-			</on-error-propagate>
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate3" doc:id="d2301d51-ac36-4367-9d54-9dc2bdf1dc68" type="APIKIT:UNSUPPORTED_MEDIA_TYPE" >
-				<ee:transform doc:name="Transform Error Response" doc:id="199342ad-6fa5-4711-99bc-f2575c3a5883" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="406" doc:name="httpStatus" doc:id="c4663f55-3581-4002-897f-ca6dafcd28fc" variableName="httpStatus" />
+            </on-error-propagate>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate3" doc:id="d2301d51-ac36-4367-9d54-9dc2bdf1dc68" type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform doc:name="Transform Error Response" doc:id="199342ad-6fa5-4711-99bc-f2575c3a5883">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -264,14 +246,14 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-				<set-variable value="415" doc:name="httpStatus" doc:id="660b213f-28fa-4d01-a942-896f624ed4a3" variableName="httpStatus" />
-			</on-error-propagate>
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate4" doc:id="cc588f79-a068-43c4-ae98-5d76ca14056f" type="APIKIT:METHOD_NOT_ALLOWED" >
-				<ee:transform doc:name="Transform Error Response" doc:id="38a15f92-d583-4d64-88c8-10e8c8c3d5dd" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="415" doc:name="httpStatus" doc:id="660b213f-28fa-4d01-a942-896f624ed4a3" variableName="httpStatus" />
+            </on-error-propagate>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate4" doc:id="cc588f79-a068-43c4-ae98-5d76ca14056f" type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform doc:name="Transform Error Response" doc:id="38a15f92-d583-4d64-88c8-10e8c8c3d5dd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -281,13 +263,10 @@ output application/json
     timestamp: now()
   }
 }]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-				<set-variable value="405" doc:name="httpStatus" doc:id="f6fa90e4-7bee-47df-b7fd-d84878154b69" variableName="httpStatus" />
-			</on-error-propagate>
-		</error-handler>
-	</flow>
-
-
+                    </ee:message>
+                </ee:transform>
+                <set-variable value="405" doc:name="httpStatus" doc:id="f6fa90e4-7bee-47df-b7fd-d84878154b69" variableName="httpStatus" />
+            </on-error-propagate>
+        </error-handler>
+    </flow>
 </mule>
-
