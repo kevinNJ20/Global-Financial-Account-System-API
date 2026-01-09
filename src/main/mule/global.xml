@@ -16,7 +16,7 @@ http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/m
   <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config">
     <http:listener-connection host="0.0.0.0" port="8081" />
   </http:listener-config>
-	<apikit:config outboundHeadersMapName="outboundHeadersMapName" httpStatusVarName="httpStatus" doc:name="Router" doc:id="8acd4c97-eb6e-4f60-aa1d-597472f689be" name="global-financial-account-system-api-config" api="global-financial-account-system-api.raml" />
+	<apikit:config outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" doc:name="Router" doc:id="8acd4c97-eb6e-4f60-aa1d-597472f689be" name="global-financial-account-system-api-config" api="global-financial-account-system-api.raml" />
 
 
 </mule>
