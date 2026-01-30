@@ -27,6 +27,18 @@ types:
             customerGlobalId: string
             relationshipType: string
       status?: string
+    example:
+      globalId: "550e8400-e29b-41d4-a716-446655440000"
+      accountNumber: "ACC-123456789"
+      accountType: "Checking"
+      accountName: "Main Checking Account"
+      currency: "USD"
+      balance: 5000.00
+      availableBalance: 4800.00
+      owners:
+        - customerGlobalId: "c1c27e05-7e59-4f39-a7f6-7ffe9ee10d64"
+          relationshipType: "Primary"
+      status: "Active"
   FinancialTransaction:
     type: object
     properties:
@@ -40,6 +52,16 @@ types:
       transactionDate: datetime
       description?: string
       status?: string
+    example:
+      globalId: "660e8400-e29b-41d4-a716-446655440001"
+      transactionNumber: "TXN-20260128-001"
+      accountGlobalId: "550e8400-e29b-41d4-a716-446655440000"
+      transactionType: "Debit"
+      amount: 100.00
+      currency: "USD"
+      transactionDate: "2026-01-28T10:30:00Z"
+      description: "Purchase at Store XYZ"
+      status: "Posted"
   FinancialCard:
     type: object
     properties:
@@ -50,6 +72,13 @@ types:
       customerGlobalId: string
       accountGlobalId?: string
       status?: string
+    example:
+      globalId: "770e8400-e29b-41d4-a716-446655440002"
+      cardNumber: "4532-1234-5678-9010"
+      cardType: "CreditCard"
+      customerGlobalId: "c1c27e05-7e59-4f39-a7f6-7ffe9ee10d64"
+      accountGlobalId: "550e8400-e29b-41d4-a716-446655440000"
+      status: "Active"
   ErrorResponse:
     type: object
     properties:
@@ -58,6 +87,10 @@ types:
         properties:
           code: string
           message: string
+    example:
+      error:
+        code: "NOT_FOUND"
+        message: "Account not found"
 
 traits:
   hasQueryParam:
@@ -106,6 +139,18 @@ traits:
     body:
       application/json:
         type: FinancialAccount
+        example:
+          globalId: "550e8400-e29b-41d4-a716-446655440000"
+          accountNumber: "ACC-123456789"
+          accountType: "Checking"
+          accountName: "Main Checking Account"
+          currency: "USD"
+          balance: 5000.00
+          availableBalance: 4800.00
+          status: "Active"
+          owners:
+            - customerGlobalId: "c1c27e05-7e59-4f39-a7f6-7ffe9ee10d64"
+              relationshipType: "Primary"
     responses:
       200:
         body:
@@ -158,6 +203,16 @@ traits:
       body:
         application/json:
           type: FinancialTransaction
+          example:
+            globalId: "660e8400-e29b-41d4-a716-446655440001"
+            transactionNumber: "TXN-20260128-001"
+            accountGlobalId: "550e8400-e29b-41d4-a716-446655440000"
+            transactionType: "Debit"
+            amount: 100.00
+            currency: "USD"
+            transactionDate: "2026-01-28T10:30:00Z"
+            description: "Purchase at Store XYZ"
+            status: "Posted"
       responses:
         200:
           body:
@@ -190,6 +245,13 @@ traits:
       body:
         application/json:
           type: FinancialCard
+          example:
+            globalId: "770e8400-e29b-41d4-a716-446655440002"
+            cardNumber: "4532-1234-5678-9010"
+            cardType: "CreditCard"
+            customerGlobalId: "c1c27e05-7e59-4f39-a7f6-7ffe9ee10d64"
+            accountGlobalId: "550e8400-e29b-41d4-a716-446655440000"
+            status: "Active"
       responses:
         200:
           body:

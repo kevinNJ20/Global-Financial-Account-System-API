@@ -108,10 +108,10 @@ output application/json
 output application/java
 ---
 {
-  globalId: attributes.queryParams.globalId default null,
-  customerGlobalId: attributes.queryParams.customerGlobalId default null,
-  accountNumber: attributes.queryParams.accountNumber default null,
-  accountType: attributes.queryParams.accountType default null,
+  globalId: attributes.queryParams.globalId default "",
+  customerGlobalId: attributes.queryParams.customerGlobalId default "",
+  accountNumber: attributes.queryParams.accountNumber default "",
+  accountType: attributes.queryParams.accountType default "",
   limit: (attributes.queryParams.limit as Number default 100) as String,
   offset: (attributes.queryParams.offset as Number default 0) as String
 }]]></ee:set-payload>
