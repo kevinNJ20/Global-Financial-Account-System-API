@@ -48,9 +48,21 @@ types:
       globalId?: string
       cardNumber: string
       cardType: string
+      cardNetwork?: string
       customerGlobalId: string
       accountGlobalId?: string
+      cardholderName?: string
+      expirationDate?: date-only
       status?: string
+      creditLimit?: number
+      availableCredit?: number
+      dailyPurchaseLimit?: number
+      dailyAtmWithdrawalLimit?: number
+      internationalTransactionsEnabled?: boolean
+      onlineTransactionsEnabled?: boolean
+      issuedDate?: date-only
+      createdAt?: datetime
+      updatedAt?: datetime
   ErrorResponse:
     type: object
     properties:
@@ -200,3 +212,34 @@ traits:
           body:
             application/json:
               type: FinancialCard
+    
+    /{cardGlobalId}:
+      displayName: Card by Global ID
+      uriParameters:
+        cardGlobalId:
+          type: string
+      get:
+        displayName: Get Card by Global ID
+        responses:
+          200:
+            body:
+              application/json:
+                type: FinancialCard
+          404:
+            body:
+              application/json:
+                type: ErrorResponse
+      put:
+        displayName: Update Card
+        body:
+          application/json:
+            type: FinancialCard
+        responses:
+          200:
+            body:
+              application/json:
+                type: FinancialCard
+          404:
+            body:
+              application/json:
+                type: ErrorResponse

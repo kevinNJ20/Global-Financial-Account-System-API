@@ -20,7 +20,7 @@ http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/m
   </http:listener-config>
 	<apikit:config outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" doc:name="Router" doc:id="8acd4c97-eb6e-4f60-aa1d-597472f689be" name="global-financial-account-system-api-config" api="global-financial-account-system-api.raml" />
 	<db:config name="Database_Config" doc:name="Database Config" doc:id="2ea08270-49da-4148-86f7-7ef4e5bc9fb9" >
-		<db:generic-connection url="jdbc:postgresql://aws-1-eu-west-1.pooler.supabase.com:5432/postgres" driverClassName="org.postgresql.Driver" user="postgres.vvfdezdptopljymzoivz" password="Jake902479%" />
+		<db:generic-connection url="${supabase.db.url}" driverClassName="org.postgresql.Driver" user="${supabase.db.user}" password="${supabase.db.password}" />
 	</db:config>
 
 </mule>

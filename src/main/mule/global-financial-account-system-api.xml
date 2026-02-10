@@ -625,6 +625,47 @@ fun normalizeDisputeStatus(ds) =
   else if (ds as String == "Resolved" or ds as String == "resolved" or ds as String == "RESOLVED") "Resolved"
   else if (ds as String == "Rejected" or ds as String == "rejected" or ds as String == "REJECTED") "Rejected"
   else ds as String
+fun cleanDateTimeString(dt: String) = do {
+  // Trouve l'index du point décimal après les secondes
+  var dotIndex = dt indexOf "."
+  var plusIndex = dt indexOf "+"
+  var minusLastIndex = dt lastIndexOf "-"
+  // Détermine où se trouve le fuseau horaire
+  var tzIndex = if (plusIndex > 10) plusIndex else if (minusLastIndex > 10) minusLastIndex else -1
+  ---
+  if (dotIndex >= 0 and tzIndex > dotIndex)
+    // Garde seulement 3 chiffres après le point (millisecondes)
+    (dt[0 to dotIndex + 3]) ++ (dt[tzIndex to -1])
+  else if (dotIndex >= 0 and tzIndex < 0)
+    // Pas de fuseau horaire, garde seulement 3 chiffres après le point
+    dt[0 to dotIndex + 3]
+  else
+    // Pas de millisecondes/nanosecondes à nettoyer
+    dt
+}
+fun parseDateTime(dt) = 
+  if (dt == null) null
+  else if (dt is String) do {
+    var cleaned = cleanDateTimeString(dt as String)
+    // Enlève le Z final pour les dates simples (yyyy-MM-ddZ -> yyyy-MM-dd)
+    var normalizedDate = if (cleaned matches /^\d{4}-\d{2}-\d{2}Z$/) 
+      cleaned[0 to -2] 
+      else cleaned
+    ---
+    if (normalizedDate matches /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/)
+      normalizedDate as DateTime {format: "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"}
+    else if (normalizedDate matches /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/)
+      normalizedDate as DateTime {format: "yyyy-MM-dd'T'HH:mm:ssXXX"}
+    else if (normalizedDate matches /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$/)
+      normalizedDate as LocalDateTime {format: "yyyy-MM-dd'T'HH:mm:ss.SSS"}
+    else if (normalizedDate matches /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
+      normalizedDate as LocalDateTime {format: "yyyy-MM-dd'T'HH:mm:ss"}
+    else if (normalizedDate matches /^\d{4}-\d{2}-\d{2}$/)
+      normalizedDate as Date {format: "yyyy-MM-dd"}
+    else
+      normalizedDate as String
+  }
+  else dt as LocalDateTime
 ---
 {
   global_id: payload.globalId default null,
@@ -634,14 +675,10 @@ fun normalizeDisputeStatus(ds) =
   amount: payload.amount,
   currency: payload.currency default "USD",
   transaction_date: if (payload.transactionDate != null)
-    (if (payload.transactionDate is String)
-      ((payload.transactionDate as DateTime {format: "yyyy-MM-dd'T'HH:mm:ssX"}) as String {format: "yyyy-MM-dd HH:mm:ss.SSS"})
-      else ((payload.transactionDate as DateTime) as String {format: "yyyy-MM-dd HH:mm:ss.SSS"}))
+    (parseDateTime(payload.transactionDate) as String {format: "yyyy-MM-dd HH:mm:ss.SSS"})
     else null,
   value_date: if (payload.valueDate != null)
-    (if (payload.valueDate is String)
-      ((payload.valueDate as DateTime {format: "yyyy-MM-dd'T'HH:mm:ssX"}) as String {format: "yyyy-MM-dd"})
-      else ((payload.valueDate as DateTime) as String {format: "yyyy-MM-dd"}))
+    (parseDateTime(payload.valueDate) as String {format: "yyyy-MM-dd"})
     else "",
   description: payload.description default null,
   merchant_name: payload.merchantName default null,
@@ -1006,6 +1043,248 @@ output application/json
             </ee:message>
           </ee:transform>
           <set-variable value="500" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus"/>
+        </on-error-propagate>
+      </error-handler>
+    </try>
+  </flow>
+
+  <!-- GET /cards/{cardGlobalId} - Get Card by Global ID -->
+  <flow name="get-card-by-global-id-business-logic" doc:name="get-card-by-global-id-business-logic">
+    <try doc:name="Try">
+      <db:select config-ref="Database_Config" doc:name="Select Card by Global ID">
+        <db:sql><![CDATA[
+          SELECT *
+          FROM global_cards
+          WHERE global_id = :cardGlobalId::uuid
+        ]]></db:sql>
+        <db:input-parameters><![CDATA[#[{
+          cardGlobalId: attributes.uriParams.cardGlobalId
+        }]]]></db:input-parameters>
+      </db:select>
+
+      <choice doc:name="Card Found?">
+        <when expression="#[sizeOf(payload) > 0]">
+          <ee:transform doc:name="Transform Response">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var card = payload[0]
+---
+{
+  id: card.id as String,
+  globalId: card.global_id as String,
+  cardNumber: card.card_number,
+  cardType: card.card_type,
+  cardNetwork: card.card_network,
+  customerGlobalId: card.customer_global_id as String,
+  accountGlobalId: if (card.account_global_id != null) card.account_global_id as String else null,
+  cardholderName: card.cardholder_name,
+  expirationDate: card.expiration_date,
+  status: card.status,
+  creditLimit: card.credit_limit,
+  availableCredit: card.available_credit,
+  dailyPurchaseLimit: card.daily_purchase_limit,
+  dailyAtmWithdrawalLimit: card.daily_atm_withdrawal_limit,
+  internationalTransactionsEnabled: card.international_transactions_enabled,
+  onlineTransactionsEnabled: card.online_transactions_enabled,
+  issuedDate: card.issued_date,
+  createdAt: card.created_at as String ++ "Z",
+  updatedAt: card.updated_at as String ++ "Z"
+}]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
+          <set-variable value="200" doc:name="httpStatus" variableName="httpStatus"/>
+        </when>
+        <otherwise>
+          <ee:transform doc:name="Card Not Found">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    code: "NOT_FOUND",
+    message: "Card with globalId " ++ attributes.uriParams.cardGlobalId ++ " not found",
+    timestamp: now()
+  }
+}]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
+          <set-variable value="404" doc:name="httpStatus" variableName="httpStatus"/>
+        </otherwise>
+      </choice>
+
+      <error-handler>
+        <on-error-propagate type="*" enableNotifications="true" logException="true" doc:name="Error Handler">
+          <ee:transform doc:name="Transform Error">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    code: "DATABASE_ERROR",
+    message: "An error occurred while fetching card",
+    timestamp: now()
+  }
+}]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
+          <set-variable value="500" doc:name="httpStatus" variableName="httpStatus"/>
+        </on-error-propagate>
+      </error-handler>
+    </try>
+  </flow>
+
+  <!-- PUT /cards/{cardGlobalId} - Update Card -->
+  <flow name="update-card-business-logic" doc:name="update-card-business-logic">
+    <try doc:name="Try">
+      <ee:transform doc:name="Transform Request to DB Format">
+        <ee:message>
+          <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+fun normalizeCardType(ct) = 
+  if (ct == null) null
+  else if (ct as String == "CreditCard" or ct as String == "creditcard" or ct as String == "CREDITCARD" or ct as String == "Credit" or ct as String == "credit") "CreditCard"
+  else if (ct as String == "DebitCard" or ct as String == "debitcard" or ct as String == "DEBITCARD" or ct as String == "Debit" or ct as String == "debit") "DebitCard"
+  else if (ct as String == "PrepaidCard" or ct as String == "prepaidcard" or ct as String == "PREPAIDCARD" or ct as String == "Prepaid" or ct as String == "prepaid") "PrepaidCard"
+  else ct as String
+fun normalizeCardStatus(s) = 
+  if (s == null) null
+  else if (s as String == "Active" or s as String == "active" or s as String == "ACTIVE") "Active"
+  else if (s as String == "Inactive" or s as String == "inactive" or s as String == "INACTIVE") "Inactive"
+  else if (s as String == "Blocked" or s as String == "blocked" or s as String == "BLOCKED") "Blocked"
+  else if (s as String == "Expired" or s as String == "expired" or s as String == "EXPIRED") "Expired"
+  else if (s as String == "Cancelled" or s as String == "cancelled" or s as String == "CANCELLED") "Cancelled"
+  else s as String
+---
+{
+  cardGlobalId: vars.cardGlobalId,
+  cardNumber: payload.cardNumber,
+  cardType: normalizeCardType(payload.cardType),
+  cardNetwork: payload.cardNetwork,
+  customerGlobalId: payload.customerGlobalId,
+  accountGlobalId: payload.accountGlobalId,
+  cardholderName: payload.cardholderName,
+  expirationDate: payload.expirationDate,
+  status: normalizeCardStatus(payload.status),
+  creditLimit: payload.creditLimit,
+  availableCredit: payload.availableCredit,
+  dailyPurchaseLimit: payload.dailyPurchaseLimit,
+  dailyAtmWithdrawalLimit: payload.dailyAtmWithdrawalLimit,
+  internationalTransactionsEnabled: payload.internationalTransactionsEnabled,
+  onlineTransactionsEnabled: payload.onlineTransactionsEnabled,
+  issuedDate: payload.issuedDate
+}]]></ee:set-payload>
+        </ee:message>
+      </ee:transform>
+
+      <db:update config-ref="Database_Config" doc:name="Update Card">
+        <db:sql><![CDATA[
+          UPDATE global_cards
+          SET
+            card_number = COALESCE(:cardNumber, card_number),
+            card_type = COALESCE(:cardType, card_type),
+            card_network = COALESCE(:cardNetwork, card_network),
+            customer_global_id = COALESCE(:customerGlobalId::uuid, customer_global_id),
+            account_global_id = COALESCE(:accountGlobalId::uuid, account_global_id),
+            cardholder_name = COALESCE(:cardholderName, cardholder_name),
+            expiration_date = COALESCE(:expirationDate::date, expiration_date),
+            status = COALESCE(:status, status),
+            credit_limit = COALESCE(:creditLimit, credit_limit),
+            available_credit = COALESCE(:availableCredit, available_credit),
+            daily_purchase_limit = COALESCE(:dailyPurchaseLimit, daily_purchase_limit),
+            daily_atm_withdrawal_limit = COALESCE(:dailyAtmWithdrawalLimit, daily_atm_withdrawal_limit),
+            international_transactions_enabled = COALESCE(:internationalTransactionsEnabled, international_transactions_enabled),
+            online_transactions_enabled = COALESCE(:onlineTransactionsEnabled, online_transactions_enabled),
+            issued_date = COALESCE(:issuedDate::date, issued_date),
+            updated_at = CURRENT_TIMESTAMP
+          WHERE global_id = :cardGlobalId::uuid
+        ]]></db:sql>
+        <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
+      </db:update>
+
+      <!-- Fetch the updated card -->
+      <db:select config-ref="Database_Config" doc:name="Select Updated Card">
+        <db:sql><![CDATA[
+          SELECT *
+          FROM global_cards
+          WHERE global_id = :cardGlobalId::uuid
+        ]]></db:sql>
+        <db:input-parameters><![CDATA[#[{
+          cardGlobalId: vars.cardGlobalId
+        }]]]></db:input-parameters>
+      </db:select>
+
+      <choice doc:name="Card Found?">
+        <when expression="#[sizeOf(payload) > 0]">
+          <ee:transform doc:name="Transform Response">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var card = payload[0]
+---
+{
+  id: card.id as String,
+  globalId: card.global_id as String,
+  cardNumber: card.card_number,
+  cardType: card.card_type,
+  cardNetwork: card.card_network,
+  customerGlobalId: card.customer_global_id as String,
+  accountGlobalId: if (card.account_global_id != null) card.account_global_id as String else null,
+  cardholderName: card.cardholder_name,
+  expirationDate: card.expiration_date,
+  status: card.status,
+  creditLimit: card.credit_limit,
+  availableCredit: card.available_credit,
+  dailyPurchaseLimit: card.daily_purchase_limit,
+  dailyAtmWithdrawalLimit: card.daily_atm_withdrawal_limit,
+  internationalTransactionsEnabled: card.international_transactions_enabled,
+  onlineTransactionsEnabled: card.online_transactions_enabled,
+  issuedDate: card.issued_date,
+  createdAt: card.created_at as String ++ "Z",
+  updatedAt: card.updated_at as String ++ "Z"
+}]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
+          <set-variable value="200" doc:name="httpStatus" variableName="httpStatus"/>
+        </when>
+        <otherwise>
+          <ee:transform doc:name="Card Not Found">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    code: "NOT_FOUND",
+    message: "Card with globalId " ++ vars.cardGlobalId ++ " not found",
+    timestamp: now()
+  }
+}]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
+          <set-variable value="404" doc:name="httpStatus" variableName="httpStatus"/>
+        </otherwise>
+      </choice>
+
+      <error-handler>
+        <on-error-propagate type="*" enableNotifications="true" logException="true" doc:name="Error Handler">
+          <ee:transform doc:name="Transform Error">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    code: "DATABASE_ERROR",
+    message: "An error occurred while updating card",
+    timestamp: now()
+  }
+}]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
+          <set-variable value="500" doc:name="httpStatus" variableName="httpStatus"/>
         </on-error-propagate>
       </error-handler>
     </try>

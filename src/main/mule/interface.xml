@@ -171,6 +171,16 @@ output application/java
     <flow name="post:\accounts\cards:application\json:global-financial-account-system-api-config">
         <flow-ref name="upsert-card-business-logic" doc:name="upsert-card-business-logic" />
     </flow>
+    <!-- GET /accounts/cards/{cardGlobalId} -->
+    <flow name="get:\accounts\cards\(cardGlobalId):global-financial-account-system-api-config">
+        <set-variable value="#[attributes.uriParams.cardGlobalId]" variableName="cardGlobalId" doc:name="Set Card Global ID" />
+        <flow-ref name="get-card-by-global-id-business-logic" doc:name="get-card-by-global-id-business-logic" />
+    </flow>
+    <!-- PUT /accounts/cards/{cardGlobalId} -->
+    <flow name="put:\accounts\cards\(cardGlobalId):application\json:global-financial-account-system-api-config">
+        <set-variable value="#[attributes.uriParams.cardGlobalId]" variableName="cardGlobalId" doc:name="Set Card Global ID" />
+        <flow-ref name="update-card-business-logic" doc:name="update-card-business-logic" />
+    </flow>
     <flow name="console" doc:id="eb870f2f-70d6-474b-9d47-9e18b23249ec">
         <http:listener doc:name="HTTP Listener" doc:id="495f6d19-b410-4849-9012-e970e0148fbb" config-ref="HTTP_Listener_config" path="/console/*">
             <http:response statusCode="#[vars.httpStatus default 200]">

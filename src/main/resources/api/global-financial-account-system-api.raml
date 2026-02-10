@@ -69,9 +69,24 @@ types:
       globalId?: string
       cardNumber: string
       cardType: string
+      cardNetwork?: string
       customerGlobalId: string
       accountGlobalId?: string
+      cardholderName?: string
+      expirationDate?: date-only
       status?: string
+      creditLimit?: number
+      availableCredit?: number
+      controls?:
+        type: object
+        properties:
+          dailyPurchaseLimit?: number
+          dailyATMWithdrawalLimit?: number
+          internationalTransactionsEnabled?: boolean
+          onlineTransactionsEnabled?: boolean
+      issuedDate?: date-only
+      createdAt?: datetime
+      updatedAt?: datetime
     example:
       globalId: "770e8400-e29b-41d4-a716-446655440002"
       cardNumber: "4532-1234-5678-9010"
@@ -79,6 +94,13 @@ types:
       customerGlobalId: "c1c27e05-7e59-4f39-a7f6-7ffe9ee10d64"
       accountGlobalId: "550e8400-e29b-41d4-a716-446655440000"
       status: "Active"
+      creditLimit: 10000
+      availableCredit: 8500
+      controls:
+        dailyPurchaseLimit: 2000
+        dailyATMWithdrawalLimit: 500
+        internationalTransactionsEnabled: true
+        onlineTransactionsEnabled: true
   ErrorResponse:
     type: object
     properties:
@@ -261,3 +283,47 @@ traits:
           body:
             application/json:
               type: FinancialCard
+
+    /{cardGlobalId}:
+      displayName: Card by Global ID
+      uriParameters:
+        cardGlobalId:
+          type: string
+          description: UUID of the card in Global Data
+      get:
+        displayName: Get Card by Global ID
+        description: Retrieve a specific card by its global ID
+        responses:
+          200:
+            body:
+              application/json:
+                type: FinancialCard
+          404:
+            body:
+              application/json:
+                type: ErrorResponse
+      put:
+        displayName: Update Card
+        description: Update card details including controls
+        body:
+          application/json:
+            type: FinancialCard
+            example:
+              globalId: "a0b737cd-d427-0e2e-4e03-122fc40fa5a6"
+              cardNumber: "4532-****-****-1234"
+              cardType: "CreditCard"
+              customerGlobalId: "3ae102cf-d871-4f69-8847-566fc949a9a0"
+              controls:
+                dailyPurchaseLimit: 2000
+                dailyATMWithdrawalLimit: 500
+                internationalTransactionsEnabled: false
+                onlineTransactionsEnabled: true
+        responses:
+          200:
+            body:
+              application/json:
+                type: FinancialCard
+          404:
+            body:
+              application/json:
+                type: ErrorResponse
