@@ -13,6 +13,7 @@
   <!-- GET /accounts - Business Logic Flow -->
   <flow name="get-accounts-business-logic" doc:name="get-accounts-business-logic">
     <try doc:name="Try">
+      <logger level="INFO" message="#['GET accounts - customerGlobalId: ' ++ ((payload.customerGlobalId default '') as String) ++ ', limit: ' ++ ((payload.limit default '100') as String)]" doc:name="Log request"/>
       <db:select config-ref="Database_Config" doc:name="Select Global Accounts">
         <db:sql><![CDATA[
           SELECT a.*
@@ -116,10 +117,12 @@ accounts map ((account) -> {
         </ee:message>
       </ee:transform>
 
+      <logger level="INFO" message="#['GET accounts success - count: ' ++ sizeOf(payload)]" doc:name="Log success"/>
       <set-variable value="200" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus"/>
       
       <error-handler>
         <on-error-propagate type="*" enableNotifications="true" logException="true" doc:name="Error Handler">
+          <logger level="ERROR" message="#['GET accounts failed - error: ' ++ (error.description default 'unknown')]" doc:name="Log error"/>
           <ee:transform doc:name="Transform Error">
             <ee:message>
               <ee:set-payload><![CDATA[%dw 2.0
@@ -142,7 +145,7 @@ output application/json
 
   <!-- POST /accounts - Business Logic Flow -->
   <flow name="upsert-account-business-logic" doc:name="upsert-account-business-logic">
-    <logger level="INFO" message="Initial payload - accountNumber: #[payload.accountNumber], payload: #[payload]" doc:name="Log Initial Payload" />
+    <logger level="INFO" message="#['POST upsert account - accountNumber: ' ++ (payload.accountNumber default 'n/a')]" doc:name="Log request"/>
     <ee:transform doc:name="Transform Request to DB Format">
       <ee:message>
         <ee:set-payload><![CDATA[%dw 2.0
@@ -389,10 +392,12 @@ var owners = payload
         </ee:message>
       </ee:transform>
 
+      <logger level="INFO" message="#['POST upsert account success - globalId: ' ++ (payload.globalId default 'n/a')]" doc:name="Log success"/>
       <set-variable value="#[if(vars.accountData.global_id == null) 201 else 200]" doc:name="httpStatus" doc:id="d3d4a356-1b30-4ea3-bf48-82e66c597694" variableName="httpStatus"/>
       
       <error-handler>
         <on-error-propagate type="*" enableNotifications="true" logException="true" doc:name="Error Handler">
+          <logger level="ERROR" message="#['POST upsert account failed - error: ' ++ (error.description default 'unknown')]" doc:name="Log error"/>
           <ee:transform doc:name="Transform Error">
             <ee:message>
               <ee:set-payload><![CDATA[%dw 2.0
