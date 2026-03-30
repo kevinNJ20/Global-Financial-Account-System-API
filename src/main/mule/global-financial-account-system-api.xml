@@ -376,19 +376,12 @@ vars.owners map ((owner) -> {
             <db:insert config-ref="Database_Config" doc:name="Insert Owner">
               <db:sql>
                 <![CDATA[
-                WITH updated AS (
-                  UPDATE global_account_owners
-                  SET relationship_type = :relationship_type
-                  WHERE account_global_id = :account_global_id::uuid
-                    AND customer_global_id = :customer_global_id::uuid
-                  RETURNING 1
-                )
                 INSERT INTO global_account_owners (
                   account_global_id, customer_global_id, relationship_type
                 )
-                SELECT
+                VALUES (
                   :account_global_id::uuid, :customer_global_id::uuid, :relationship_type
-                WHERE NOT EXISTS (SELECT 1 FROM updated)
+                )
               ]]>
               </db:sql>
               <db:input-parameters>
